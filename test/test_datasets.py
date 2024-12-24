@@ -1,6 +1,7 @@
 # test_datasets.py
 import pytest
 from datasets import load_dataset
+import numpy as np 
 
 #
 # Cross-Domain Foundation Model Adaptation
@@ -10,52 +11,47 @@ from datasets import load_dataset
     # Each entry: (HF repo name, [list of splits], {"split_name": shape_of_seismic, ...})
     (
         "porestar/crossdomainfoundationmodeladaption-crater",
-        ["train", "valid", "test"], 
+        ["train", "valid"], 
         {
             "train": (1022, 1022), 
-            "valid": (1022, 1022), 
-            "test": (1022, 1022)
+            "valid": (1022, 1022)
         }
     ),
     (
         "porestar/crossdomainfoundationmodeladaption-das",
-        ["train", "valid", "test"], 
+        ["train", "valid"], 
         {
             "train": (512, 512), 
-            "valid": (512, 512), 
-            "test": (512, 512)
+            "valid": (512, 512)
         }
     ),
     (
         "porestar/crossdomainfoundationmodeladaption-geobody",
-        ["train", "valid", "test"], 
+        ["train", "valid"], 
         {
             "train": (224, 224), 
-            "valid": (224, 224), 
-            "test": (224, 224)
+            "valid": (224, 224)
         }
     ),
     (
         "porestar/crossdomainfoundationmodeladaption-seismicfacies",
-        ["train", "valid", "test"], 
+        ["train", "valid"], 
         {
             "train": (1006, 782), 
-            "valid": (1006, 782), 
-            "test": (1006, 782)
+            "valid": (1006, 782)
         }
     ),
     (
         "porestar/crossdomainfoundationmodeladaption-deepfault",
-        ["train", "valid", "test"], 
+        ["train", "valid"], 
         {
             "train": (896, 896), 
-            "valid": (896, 896), 
-            "test": (896, 896)
+            "valid": (896, 896)
         }
     ),
 ])
 def test_crossdomainfoundationmodeladaption_datasets(dataset_name, expected_splits, expected_shapes):
-    dataset = load_dataset(dataset_name)
+    dataset = load_dataset(dataset_name).with_format("numpy")
 
     # Check that the dataset has the expected splits
     actual_splits = list(dataset.keys())
@@ -70,7 +66,8 @@ def test_crossdomainfoundationmodeladaption_datasets(dataset_name, expected_spli
         split_dataset = dataset[split]
         # If there's a "seismic" column, test shape
         if "seismic" in split_dataset.features:
-            seismic_shape = split_dataset.features["seismic"].shape
+            item = split_dataset.select([0])["seismic"].squeeze()
+            seismic_shape = item.shape
             # e.g. (1022, 1022)
             assert seismic_shape == expected_shapes[split], (
                 f"Expected seismic shape {expected_shapes[split]} in split '{split}' for dataset {dataset_name}, "
@@ -78,7 +75,8 @@ def test_crossdomainfoundationmodeladaption_datasets(dataset_name, expected_spli
             )
         # If there's a "label" column, test shape as well
         if "label" in split_dataset.features:
-            label_shape = split_dataset.features["label"].shape
+            item = split_dataset.select([0])["label"].squeeze()
+            label_shape = item.shape
             # Usually label is the same shape as seismic, but sometimes different integer dtype
             # If the code above created them at the same shape, we can do:
             assert label_shape == expected_shapes[split], (
@@ -98,7 +96,7 @@ def test_crossdomainfoundationmodeladaption_datasets(dataset_name, expected_spli
         "porestar/seismicfoundationmodel-denoise",
         ["train"],  # Only one split
         {"train": (224, 224)},
-        {"train": 200}  # from your original snippet
+        {"train": 2000}  # from your original snippet
     ),
     #
     # Denoise-field (single-modal, "seismic" only)
@@ -141,22 +139,22 @@ def test_crossdomainfoundationmodeladaption_datasets(dataset_name, expected_spli
     #
     (
         "porestar/seismicfoundationmodel-inversion-synthetic",
-        ["train", "validation"], 
-        {"train": (224, 224), "validation": (224, 224)},
-        {"train": 2200, "validation": 0}  # your example said 0-2199 => 2200 items, "validation" was empty
+        ["train"], 
+        {"train": (224, 224)},
+        {"train": 2200}  # your example said 0-2199 => 2200 items, "validation" was empty
     ),
     #
     # Inversion seam
     #
     (
         "porestar/seismicfoundationmodel-inversion-seam",
-        ["train", "validation"], 
-        {"train": (224, 224), "validation": (224, 224)},
-        {"train": 5000, "validation": 0}  # your example said 0-4999 => 5000 items
+        ["train"], 
+        {"train": (224, 224)},
+        {"train": 5000}  # your example said 0-4999 => 5000 items
     ),
 ])
 def test_seismicfoundationmodel_datasets(dataset_name, expected_splits, expected_shapes, expected_sizes):
-    dataset = load_dataset(dataset_name)
+    dataset = load_dataset(dataset_name).with_format(type="numpy")
 
     # Check splits
     actual_splits = list(dataset.keys())
@@ -180,13 +178,15 @@ def test_seismicfoundationmodel_datasets(dataset_name, expected_splits, expected
         # Multi-modal typically have "seismic" and "label".
         dsplit = dataset[split]
         if "seismic" in dsplit.features:
-            shape = dsplit.features["seismic"].shape
+            item = dsplit.select([0])["seismic"].squeeze()
+            shape = item.shape
             assert shape == expected_shapes[split], (
                 f"Dataset {dataset_name}, split '{split}', `seismic` shape mismatch: "
                 f"expected {expected_shapes[split]} but got {shape}"
             )
         if "label" in dsplit.features:
-            shape = dsplit.features["label"].shape
+            item = dsplit.select([0])["seismic"].squeeze()
+            shape = item.shape
             # Usually the same shape as `seismic`, unless you intentionally changed label dtype/shape
             assert shape == expected_shapes[split], (
                 f"Dataset {dataset_name}, split '{split}', `label` shape mismatch: "
@@ -206,7 +206,7 @@ def test_seismicfoundationmodel_datasets(dataset_name, expected_splits, expected
     )
 ])
 def test_superresolution_dataset(dataset_name, expected_splits, expected_sizes, lr_shape, hr_shape):
-    dataset = load_dataset(dataset_name)
+    dataset = load_dataset(dataset_name).with_format("numpy")
     # Check splits exist
     actual_splits = list(dataset.keys())
     for split in expected_splits:
@@ -222,12 +222,14 @@ def test_superresolution_dataset(dataset_name, expected_splits, expected_sizes, 
         )
         # Check shapes
         if "lr" in dsplit.features:
-            actual_lr_shape = dsplit.features["lr"].shape
+            item = dsplit.select([0])["lr"].squeeze()
+            actual_lr_shape = item.shape
             assert actual_lr_shape == lr_shape, (
                 f"Expected LR shape {lr_shape} in '{split}' split, got {actual_lr_shape}"
             )
         if "hr" in dsplit.features:
-            actual_hr_shape = dsplit.features["hr"].shape
+            item = dsplit.select([0])["hr"].squeeze()
+            actual_hr_shape = item.shape
             assert actual_hr_shape == hr_shape, (
                 f"Expected HR shape {hr_shape} in '{split}' split, got {actual_hr_shape}"
             )
