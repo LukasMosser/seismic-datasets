@@ -5,7 +5,7 @@ IMPORTANT: I do not take credit for any of these datasets, they are the products
 
 For all datasets I have tried to reproduce the train/valid/test splits as best as possible from the provided codes. 
 
-All datasets are available under the following collection: [Seismic Foundation Model Datasets](https://huggingface.co/collections/porestar/seismic-foundation-model-67609032ab28896d0b256f55)
+All datasets are available under the following Huggingface Collection: [Seismic Foundation Model Datasets](https://huggingface.co/collections/porestar/seismic-foundation-model-67609032ab28896d0b256f55)
 
 ## Installation
 To install first install uv and then install the environment as following. 
