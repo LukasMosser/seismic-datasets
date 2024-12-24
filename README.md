@@ -14,6 +14,14 @@ uv python install
 uv venv
 ```
 
+## Example loading the datasets
+Examples for loading can be found in the test suite under `test/test_datasets.py` and works as follows:
+```python
+from datasets import load_dataset
+train_dataset = load_dataset("porestar/seismicfoundationmodel-interpolation", split="train").with_format(type="numpy")
+val_dataset = load_dataset("porestar/seismicfoundationmodel-interpolation", split="validation").with_format(type="numpy")
+```
+
 ## Running the conversion scripts
 
 The conversion scripts are not intended to be run by anyone else but rather serve as an example how to create similar datasets and to provide transparency about how the datasets have been created when pushing them to huggingface.
